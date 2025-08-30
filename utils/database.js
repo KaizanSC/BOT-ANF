@@ -1,7 +1,6 @@
-// database.js
 import { Sequelize, DataTypes } from "sequelize";
 
-// Conexão com o PostgreSQL do Render
+// Conexão com o Postgres do Render
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: "postgres",
   protocol: "postgres",
@@ -37,7 +36,7 @@ export const Inventory = sequelize.define("Inventory", {
   item: { type: DataTypes.STRING },
 });
 
-// Relações
+// Relação: User → Inventory
 User.hasMany(Inventory, { foreignKey: "userId" });
 Inventory.belongsTo(User, { foreignKey: "userId" });
 
@@ -45,14 +44,14 @@ Inventory.belongsTo(User, { foreignKey: "userId" });
 export async function initDB() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
+    await sequelize.sync(); // cria tabelas se não existirem
     console.log("✅ Banco PostgreSQL conectado e sincronizado!");
   } catch (err) {
     console.error("❌ Erro ao conectar ao banco:", err);
   }
 }
 
-// FUNÇÕES SIMILARES AO SQLITE
+// Funções utilitárias
 export async function getUser(id) {
   let user = await User.findByPk(id);
   if (!user) {
@@ -79,16 +78,16 @@ export async function addItemToShop(item, price) {
 }
 
 export async function getShop() {
-  const items = await ShopItem.findAll();
-  return items.map(i => i.toJSON());
+  const shopItems = await ShopItem.findAll();
+  return shopItems.map(i => i.toJSON());
 }
 
 export async function buyItem(userId, itemName) {
   const item = await ShopItem.findByPk(itemName);
-  if (!item) return { success: false, message: "❌ Item não existe!" };
+  if (!item) return { success: false, message: "❌ Esse item não existe!" };
 
   const user = await getUser(userId);
-  if (user.coins < item.price) return { success: false, message: "💸 Saldo insuficiente!" };
+  if (user.coins < item.price) return { success: false, message: "💸 Você não tem dinheiro suficiente!" };
 
   await updateCoins(userId, -item.price);
   await Inventory.create({ userId, item: itemName });
@@ -99,5 +98,3 @@ export async function getInventory(userId) {
   const inventory = await Inventory.findAll({ where: { userId } });
   return inventory.map(i => i.item);
 }
-
-
