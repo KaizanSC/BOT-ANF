@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { getUser, updateCoins, setDaily } from "../../database.js";
+import { getUser, updateCoins, setDaily } from "../../utils/database.js";
 
 export default {
   name: "daily",
@@ -34,4 +34,3 @@ export default {
     message.reply({ embeds: [embed] });
   },
 };
-

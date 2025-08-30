@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { buyItem } from "../../database.js";
+import { buyItem } from "../../utils/database.js";
 
 export default {
   name: "buy",
@@ -27,4 +27,3 @@ export default {
     message.reply({ embeds: [embed] });
   },
 };
-

@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { getInventory } from "../../database.js";
+import { getInventory } from "../../utils/database.js";
 
 export default {
   name: "inv",
@@ -29,4 +29,3 @@ export default {
     message.reply({ embeds: [embed] });
   },
 };
-

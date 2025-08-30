@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
-import { initDB } from "./utils/database.js"; // caminho relativo correto
+import { initDB } from "./utils/database.js"; // Importa a inicialização do banco
 
 // Corrigir __dirname e __filename com ESModules
 const __filename = fileURLToPath(import.meta.url);
@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const configRaw = await fs.readFile(path.join(__dirname, "config.json"), "utf-8");
 const config = JSON.parse(configRaw);
 
-// Inicializar banco de dados PostgreSQL
+// Inicializar banco PostgreSQL
 await initDB();
 
 // Criar cliente do Discord
@@ -41,7 +41,7 @@ for (const folder of commandFolders) {
       const command = await import(`file://${filePath}`);
 
       if (command?.default?.name && typeof command.default.execute === "function") {
-        // 👉 Adiciona a categoria ao comando
+        // Adiciona a categoria ao comando
         command.default.category = folder;
         client.commands.set(command.default.name, command.default);
         console.log(`✅ Comando carregado: ${folder}/${command.default.name}`);
@@ -72,7 +72,7 @@ client.on("messageCreate", async (message) => {
   if (!command) return;
 
   try {
-    await command.execute(message, args, config.prefix);
+    await command.execute(message, args, config.prefix); // ✅ Executa comandos async
   } catch (error) {
     console.error(`❌ Erro ao executar comando ${commandName}:`, error);
     message.reply("❌ Ocorreu um erro ao executar esse comando!");
@@ -82,7 +82,7 @@ client.on("messageCreate", async (message) => {
 // Login no Discord
 client.login(process.env.DISCORD_TOKEN);
 
-// 🖥️ Servidor Express para manter o bot acordado (Render)
+// 🖥️ Servidor Express para manter o bot acordado (Render/Replit)
 const app = express();
 const port = process.env.PORT || 3000;
 

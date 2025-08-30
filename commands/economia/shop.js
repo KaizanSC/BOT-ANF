@@ -1,23 +1,41 @@
 import { EmbedBuilder } from "discord.js";
-import { getShop } from "../../database.js";
+import { User } from "../../utils/database.js";
 
 export default {
-  name: "shop",
-  description: "Mostra os itens da loja.",
+  name: "top",
+  description: "Mostra o ranking de moedas.",
   async execute(message) {
-    const shop = await getShop();
+    try {
+      const top = await User.findAll({
+        order: [["coins", "DESC"]],
+        limit: 10,
+      });
 
-    if (shop.length === 0) {
-      return message.reply("🏪 A loja está vazia!");
+      if (top.length === 0) {
+        return message.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle("🏆 Ranking de Riqueza")
+              .setDescription("Ninguém tem moedas ainda!")
+              .setColor("Red"),
+          ],
+        });
+      }
+
+      const lista = top
+        .map((user, i) => `**#${i + 1}** — <@${user.id}> • 💰 ${user.coins}`)
+        .join("\n");
+
+      const embed = new EmbedBuilder()
+        .setTitle("🏆 Ranking de Riqueza")
+        .setDescription(lista)
+        .setColor("Gold")
+        .setFooter({ text: "Top 10 usuários mais ricos" });
+
+      message.reply({ embeds: [embed] });
+    } catch (error) {
+      console.error("Erro ao executar o comando 'top':", error);
+      message.reply("❌ Ocorreu um erro ao buscar o ranking de moedas.");
     }
-
-    const embed = new EmbedBuilder()
-      .setTitle("🏪 Loja disponível")
-      .setDescription(shop.map(item => `**${item.item}** — 💰 ${item.price}`).join("\n"))
-      .setColor("Gold")
-      .setFooter({ text: "Use !buy <item> para comprar." });
-
-    message.channel.send({ embeds: [embed] });
   },
 };
-
