@@ -1,103 +1,113 @@
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import Database from "better-sqlite3";
+// database.js
+import { Sequelize, DataTypes } from "sequelize";
 
-// Obtém o caminho completo do arquivo atual
-const __filename = fileURLToPath(import.meta.url);
-// Obtém o diretório atual do arquivo
-const __dirname = dirname(__filename);
+// Conexão com o Postgres do Render
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: "postgres",
+  protocol: "postgres",
+  logging: false,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
+});
 
-// Caminho absoluto para garantir persistência, salva em /db/economia.sqlite
-const dbPath = join(__dirname, '..', 'db', 'economia.sqlite');
-const db = new Database(dbPath);
+// MODELOS
+export const User = sequelize.define("User", {
+  id: { type: DataTypes.STRING, primaryKey: true },
+  coins: { type: DataTypes.INTEGER, defaultValue: 0 },
+  lastDaily: { type: DataTypes.BIGINT, defaultValue: 0 },
+});
 
-// Log para verificar o caminho do banco de dados
-console.log("Banco de dados localizado em:", dbPath);
+export const ShopItem = sequelize.define("ShopItem", {
+  item: { type: DataTypes.STRING, primaryKey: true },
+  price: { type: DataTypes.INTEGER },
+});
 
-// Criar a tabela 'users' se não existir
-db.prepare(`CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,
-  coins INTEGER DEFAULT 0,
-  lastDaily INTEGER DEFAULT 0
-)`).run();
+export const Inventory = sequelize.define("Inventory", {
+  userId: {
+    type: DataTypes.STRING,
+    references: {
+      model: User,
+      key: "id",
+    },
+  },
+  item: { type: DataTypes.STRING },
+});
 
-// Verificação se a tabela foi criada
-console.log("Tabela 'users' criada ou já existente.");
+// Relação: User → Inventory
+User.hasMany(Inventory, { foreignKey: "userId" });
+Inventory.belongsTo(User, { foreignKey: "userId" });
 
-// Criar a tabela 'shop' se não existir
-db.prepare(`CREATE TABLE IF NOT EXISTS shop (
-  item TEXT PRIMARY KEY,
-  price INTEGER
-)`).run();
+// INICIALIZAÇÃO DO BANCO
+export async function initDB() {
+  try {
+    await sequelize.authenticate();
+    await sequelize.sync(); // cria tabelas se não existirem
+    console.log("✅ Banco PostgreSQL conectado e sincronizado!");
+  } catch (err) {
+    console.error("❌ Erro ao conectar ao banco:", err);
+  }
+}
 
-// Criar a tabela 'inventory' se não existir
-db.prepare(`CREATE TABLE IF NOT EXISTS inventory (
-  userId TEXT,
-  item TEXT,
-  FOREIGN KEY (userId) REFERENCES users(id)
-)`).run();
+// FUNÇÕES SIMILARES AO SQLITE
 
-// Função para obter ou criar um usuário
-export function getUser(id) {
-  let user = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
+export async function getUser(id) {
+  let user = await User.findByPk(id);
   if (!user) {
-    // Se o usuário não existir, cria um novo
-    db.prepare("INSERT INTO users (id, coins, lastDaily) VALUES (?, 0, 0)").run(id);
-    user = { id, coins: 0, lastDaily: 0 };
-    console.log(`Novo usuário criado com id: ${id}`);
+    user = await User.create({ id, coins: 0, lastDaily: 0 });
+    console.log(`Novo usuário criado: ${id}`);
   } else {
     console.log(`Usuário existente encontrado: ${id}`);
   }
   return user;
 }
 
-// Função para atualizar as moedas de um usuário
-export function updateCoins(id, amount) {
-  const user = getUser(id);
-  db.prepare("UPDATE users SET coins = ? WHERE id = ?").run(user.coins + amount, id);
-  console.log(`Moedas de ${id} atualizadas para ${user.coins + amount}`);
+export async function updateCoins(id, amount) {
+  const user = await getUser(id);
+  user.coins += amount;
+  await user.save();
+  console.log(`Moedas de ${id} atualizadas para ${user.coins}`);
 }
 
-// Função para atualizar o timestamp do último "daily"
-export function setDaily(id, timestamp) {
-  db.prepare("UPDATE users SET lastDaily = ? WHERE id = ?").run(timestamp, id);
+export async function setDaily(id, timestamp) {
+  const user = await getUser(id);
+  user.lastDaily = timestamp;
+  await user.save();
   console.log(`Timestamp do último daily atualizado para ${timestamp}`);
 }
 
-// Função para adicionar um item à loja
-export function addItemToShop(item, price) {
-  db.prepare("INSERT OR REPLACE INTO shop (item, price) VALUES (?, ?)").run(item, price);
+export async function addItemToShop(item, price) {
+  await ShopItem.upsert({ item, price });
   console.log(`Item adicionado/atualizado na loja: ${item} com preço ${price}`);
 }
 
-// Função para obter todos os itens da loja
-export function getShop() {
-  const shopItems = db.prepare("SELECT * FROM shop").all();
-  console.log("Itens da loja:", shopItems);
-  return shopItems;
+export async function getShop() {
+  const shopItems = await ShopItem.findAll();
+  console.log("Itens da loja:", shopItems.map(i => i.toJSON()));
+  return shopItems.map(i => i.toJSON());
 }
 
-// Função para comprar um item
-export function buyItem(userId, itemName) {
-  const item = db.prepare("SELECT * FROM shop WHERE item = ?").get(itemName);
+export async function buyItem(userId, itemName) {
+  const item = await ShopItem.findByPk(itemName);
   if (!item) return { success: false, message: "❌ Esse item não existe!" };
 
-  const user = getUser(userId);
-  if (user.coins < item.price) {
-    return { success: false, message: "💸 Você não tem dinheiro suficiente!" };
-  }
+  const user = await getUser(userId);
+  if (user.coins < item.price) return { success: false, message: "💸 Você não tem dinheiro suficiente!" };
 
   // Remove moedas e adiciona item ao inventário
-  updateCoins(userId, -item.price);
-  db.prepare("INSERT INTO inventory (userId, item) VALUES (?, ?)").run(userId, itemName);
+  await updateCoins(userId, -item.price);
+  await Inventory.create({ userId, item: itemName });
 
   console.log(`Usuário ${userId} comprou o item: ${itemName} por ${item.price} moedas.`);
   return { success: true, message: `✅ Você comprou **${itemName}** por ${item.price} moedas!` };
 }
 
-// Função para obter os itens de um usuário no inventário
-export function getInventory(userId) {
-  const inventory = db.prepare("SELECT item FROM inventory WHERE userId = ?").all(userId);
-  console.log(`Inventário do usuário ${userId}:`, inventory);
-  return inventory;
+export async function getInventory(userId) {
+  const inventory = await Inventory.findAll({ where: { userId } });
+  console.log(`Inventário do usuário ${userId}:`, inventory.map(i => i.item));
+  return inventory.map(i => i.item);
 }
+
