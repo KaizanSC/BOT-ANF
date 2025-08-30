@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { User } from "../../database.js";
+import { User } from "../../utils/database.js";
 
 export default {
   name: "top",
