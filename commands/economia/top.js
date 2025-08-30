@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { User } from "../database.js"; // importa o modelo User do Postgres
+import { User } from "../../database.js";
 
 export default {
   name: "top",
@@ -8,13 +8,7 @@ export default {
     console.log("Comando 'top' executado.");
 
     try {
-      // Buscar os 10 usuários com mais coins
-      const top = await User.findAll({
-        order: [["coins", "DESC"]],
-        limit: 10,
-      });
-
-      console.log("Resultado da consulta ao banco:", top.map(u => u.toJSON()));
+      const top = await User.findAll({ order: [["coins", "DESC"]], limit: 10 });
 
       if (top.length === 0) {
         return message.reply({
@@ -27,9 +21,7 @@ export default {
         });
       }
 
-      const lista = top
-        .map((user, i) => `**#${i + 1}** — <@${user.id}> • 💰 ${user.coins}`)
-        .join("\n");
+      const lista = top.map((user, i) => `**#${i + 1}** — <@${user.id}> • 💰 ${user.coins}`).join("\n");
 
       const embed = new EmbedBuilder()
         .setTitle("🏆 Ranking de Riqueza")
