@@ -3,42 +3,16 @@ import { addRPGShopItem } from "../../utils/database.js";
 
 export default {
   name: "rpg-additem",
-  description: "Adiciona um item à loja RPG (apenas administradores).",
-  execute(message, args) {
+  description: "Adiciona um item à loja RPG (admin)",
+  async execute(message, args) {
     if (!message.member.permissions.has("Administrator")) {
-      return message.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle("❌ Acesso Negado")
-            .setDescription("Você precisa ser administrador para usar este comando.")
-            .setColor("Red")
-        ]
-      });
+      return message.reply({ embeds: [new EmbedBuilder().setTitle("❌ Acesso negado").setDescription("Você precisa ser administrador").setColor("Red")] });
     }
 
     const [nome, preco] = args;
-    const itemName = nome?.trim();
-    const itemPrice = parseInt(preco);
+    if (!nome || !preco || isNaN(preco)) return message.reply("❌ Uso: `!additem <nome> <preço>`");
 
-    if (!itemName || isNaN(itemPrice)) {
-      return message.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle("❌ Erro ao adicionar item")
-            .setDescription("Uso correto: `!rpg-additem <nome> <preço>`")
-            .setColor("Red")
-        ]
-      });
-    }
-
-    addRPGShopItem(itemName, itemPrice);
-
-    const embed = new EmbedBuilder()
-      .setTitle("✅ Item Adicionado")
-      .setDescription(`O item **${itemName}** foi adicionado à loja por 💰 **${itemPrice} RPGCoins**.`)
-      .setColor("Green");
-
-    message.reply({ embeds: [embed] });
-  }
+    await addRPGShopItem(nome, parseInt(preco));
+    message.reply(`✅ Item **${nome}** adicionado à loja por 💰 ${preco} RPGCoins`);
+  },
 };
-

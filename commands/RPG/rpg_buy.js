@@ -1,22 +1,14 @@
-import { EmbedBuilder } from "discord.js";
 import { buyRPGItem } from "../../utils/database.js";
 
 export default {
   name: "rpg-buy",
-  description: "Compre um item na loja RPG.",
-  execute(message, args) {
-    if (!args.length) {
-      return message.reply("❌ Uso correto: `!rpg-buy <nome do item>`");
-    }
-
+  description: "Compra um item da loja RPG",
+  async execute(message, args) {
     const itemName = args.join(" ");
-    const result = buyRPGItem(message.author.id, itemName);
+    if (!itemName) return message.reply("❌ Use: `!buy <item>`");
 
-    const embed = new EmbedBuilder()
-      .setTitle(result.success ? "✅ Compra concluída" : "❌ Falha na compra")
-      .setDescription(result.message)
-      .setColor(result.success ? "Green" : "Red");
-
-    message.reply({ embeds: [embed] });
-  }
+    const result = await buyRPGItem(message.author.id, itemName);
+    message.reply(result.message);
+  },
 };
+
