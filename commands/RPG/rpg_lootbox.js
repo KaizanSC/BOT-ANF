@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import db, { getRPGUser } from "../../utils/database.js";
+import { getRPGUser } from "../../utils/database.js";
 
 const rpgLootTable = {
   comum: [
