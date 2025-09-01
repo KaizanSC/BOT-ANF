@@ -114,3 +114,37 @@ export async function getInventory(userId) {
   const inventory = await Inventory.findAll({ where: { userId } });
   return inventory.map(i => i.item);
 }
+
+import db, { getRPGUser, updateRPGCoins } from "./database.js";
+
+// Criar tabela da loja RPG
+db.prepare(`CREATE TABLE IF NOT EXISTS rpg_shop (
+  item TEXT PRIMARY KEY,
+  price INTEGER,
+  tipo TEXT
+)`).run();
+
+// Funções para RPG Shop
+export async function addRPGShopItem(item, price, tipo = "item") {
+  db.prepare("INSERT OR REPLACE INTO rpg_shop (item, price, tipo) VALUES (?, ?, ?)")
+    .run(item, price, tipo);
+}
+
+export async function getRPGShop() {
+  return db.prepare("SELECT * FROM rpg_shop").all();
+}
+
+export async function buyRPGItem(userId, itemName) {
+  const item = db.prepare("SELECT * FROM rpg_shop WHERE item = ?").get(itemName);
+  if (!item) return { success: false, message: "❌ Esse item não existe na loja RPG!" };
+
+  const user = await getRPGUser(userId);
+  if (user.coins < item.price) return { success: false, message: "💸 Você não tem RPGCoins suficientes!" };
+
+  // Remove RPGCoins e adiciona item ao inventário RPG
+  await updateRPGCoins(userId, -item.price);
+  db.prepare("INSERT INTO rpg_inventory (userId, item) VALUES (?, ?)").run(userId, item.item);
+
+  return { success: true, message: `✅ Você comprou **${item.item}** por ${item.price} RPGCoins!` };
+}
+

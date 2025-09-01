@@ -8,8 +8,8 @@ export default {
     const user = await getUser(message.author.id);
 
     const embed = new EmbedBuilder()
-      .setTitle("💳 Saldo Bancário")
-      .setDescription(`Seu saldo é: **${user.coins} moedas**`)
+      .setTitle("💳 Saldo de ANF Coins")
+      .setDescription(`Seu saldo é: **${user.coins} ANF Coins**`)
       .setColor("Blue")
       .setFooter({ text: "Use !shop para comprar itens." });
 
