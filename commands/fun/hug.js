@@ -12,15 +12,17 @@ export default {
     }
 
     const gifs = [
-      "https://media.giphy.com/media/l2QDM9Jnim1YVILXa/giphy.gif",
-      "https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif",
-      "https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif",
-      "https://media.giphy.com/media/3ZnBrkqoaI2hq/giphy.gif",
-      "https://media.giphy.com/media/wnsgren9NtITS/giphy.gif",
-      "https://media.giphy.com/media/duzpaTbCUy9Vu/giphy.gif",
-      "https://media.giphy.com/media/svXXBgduBsJ1u/giphy.gif",
-      "https://media.giphy.com/media/49mdjsMrH7oze/giphy.gif"
-    ];
+  "https://media.giphy.com/media/l2QDM9Jnim1YVILXa/giphy.gif",
+  "https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif",
+  "https://media.giphy.com/media/3ZnBrkqoaI2hq/giphy.gif",
+  "https://media.giphy.com/media/wnsgren9NtITS/giphy.gif",
+  "https://media.giphy.com/media/svXXBgduBsJ1u/giphy.gif",
+  "https://media.giphy.com/media/49mdjsMrH7oze/giphy.gif",
+  "https://media.giphy.com/media/3oEduV5V6dXk6g9t4I/giphy.gif",
+  "https://media.giphy.com/media/3oEduV5V6dXk6g9t4I/giphy.gif",
+  "https://media.giphy.com/media/3oEduV5V6dXk6g9t4I/giphy.gif",
+  "https://media.giphy.com/media/3oEduV5V6dXk6g9t4I/giphy.gif"
+];
 
     const gif = gifs[Math.floor(Math.random() * gifs.length)];
 
