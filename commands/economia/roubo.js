@@ -31,15 +31,36 @@ export default {
       }
 
       const now = Date.now();
+      const cooldown = 12 * 60 * 60 * 1000; // 12 horas
       const diff = now - (user.lastSteal || 0);
 
-      if (diff < 86400000) {
-        const horas = Math.floor((86400000 - diff) / 3600000);
-        return message.reply(`⏳ Você já roubou hoje! Tente novamente em ${horas}h.`);
+      if (diff < cooldown) {
+        const restante = cooldown - diff;
+        const horas = Math.floor(restante / 3600000);
+        const minutos = Math.floor((restante % 3600000) / 60000);
+
+        return message.reply(
+          `⏳ Você já roubou recentemente! Tente novamente em ${horas}h ${minutos}m.`
+        );
       }
 
       if (vitima.coins <= 0) {
         return message.reply("❌ A vítima não tem moedas para roubar!");
+      }
+
+      // Chance de 5% de ser pego pela polícia
+      const policiaChance = Math.random();
+      if (policiaChance < 0.05) { // 5% de chance
+        const perda = Math.floor(Math.random() * 101) + 100; // 100 a 200 moedas
+        user.coins = Math.max(user.coins - perda, 0);
+        await user.save();
+
+        const embedPolicia = new EmbedBuilder()
+          .setTitle("🚓 Polícia!")
+          .setDescription(`${message.author} foi pego roubando e perdeu **${perda} ANFCoins**!`)
+          .setColor("Red");
+
+        return message.channel.send({ embeds: [embedPolicia] });
       }
 
       const porcentagem = Math.random() * 0.1; // até 10%
@@ -66,3 +87,4 @@ export default {
     }
   }
 };
+
