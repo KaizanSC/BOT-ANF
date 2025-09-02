@@ -17,9 +17,9 @@ export const User = sequelize.define("User", {
   id: { type: DataTypes.STRING, primaryKey: true },
   coins: { type: DataTypes.INTEGER, defaultValue: 0 },
   lastDaily: { type: DataTypes.BIGINT, defaultValue: 0 },
-  lastSteal: { type: DataTypes.BIGINT, defaultValue: 0 },       // cooldown roubar
-  lastAdventure: { type: DataTypes.BIGINT, defaultValue: 0 },   // cooldown aventura
-  lastScratch: { type: DataTypes.BIGINT, defaultValue: 0 },     // cooldown raspadinha
+  lastSteal: { type: DataTypes.BIGINT, defaultValue: 0 },
+  lastAdventure: { type: DataTypes.BIGINT, defaultValue: 0 },
+  lastScratch: { type: DataTypes.BIGINT, defaultValue: 0 },
 });
 
 // Loja padrão
@@ -100,3 +100,4 @@ export async function getInventory(userId) {
   const inv = await Inventory.findAll({ where: { userId } });
   return inv.map(i => i.item);
 }
+

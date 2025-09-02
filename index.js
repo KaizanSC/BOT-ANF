@@ -3,9 +3,9 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
-import { initDB } from "./utils/database.js"; // Importa a inicialização do banco
+import { initDB } from "./utils/database.js"; 
 
-// Corrigir __dirname e __filename com ESModules
+// Corrigir __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -13,10 +13,10 @@ const __dirname = path.dirname(__filename);
 const configRaw = await fs.readFile(path.join(__dirname, "config.json"), "utf-8");
 const config = JSON.parse(configRaw);
 
-// Inicializar banco PostgreSQL
+// Inicializar banco
 await initDB();
 
-// Criar cliente do Discord
+// Criar cliente Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -27,42 +27,37 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// 🔁 Carregar comandos automaticamente
+// Carregar comandos
 const commandFolders = await fs.readdir(path.join(__dirname, "commands"));
 
 for (const folder of commandFolders) {
-  const commandFiles = await fs
-    .readdir(path.join(__dirname, "commands", folder))
-    .then(files => files.filter(file => file.endsWith(".js")));
+  const commandFiles = (await fs.readdir(path.join(__dirname, "commands", folder)))
+    .filter(f => f.endsWith(".js"));
 
   for (const file of commandFiles) {
     const filePath = path.join(__dirname, "commands", folder, file);
     try {
       const command = await import(`file://${filePath}`);
-
       if (command?.default?.name && typeof command.default.execute === "function") {
-        // Adiciona a categoria ao comando
         command.default.category = folder;
         client.commands.set(command.default.name, command.default);
         console.log(`✅ Comando carregado: ${folder}/${command.default.name}`);
       } else {
-        console.warn(`⚠️ Comando ignorado (sem exportação válida): ${filePath}`);
+        console.warn(`⚠️ Comando ignorado: ${filePath}`);
       }
-
-    } catch (error) {
-      console.error(`❌ Erro ao carregar comando: ${filePath}`);
-      console.error(error);
+    } catch (err) {
+      console.error(`❌ Erro ao carregar comando: ${filePath}`, err);
     }
   }
 }
 
-// Evento quando o bot está pronto
+// Evento ready
 client.once("ready", () => {
   console.log(`🤖 Bot online como ${client.user.tag}`);
 });
 
 // Escutar mensagens
-client.on("messageCreate", async (message) => {
+client.on("messageCreate", async message => {
   if (message.author.bot || !message.content.startsWith(config.prefix)) return;
 
   const args = message.content.slice(config.prefix.length).trim().split(/ +/);
@@ -72,9 +67,9 @@ client.on("messageCreate", async (message) => {
   if (!command) return;
 
   try {
-    await command.execute(message, args, config.prefix); // ✅ Executa comandos async
-  } catch (error) {
-    console.error(`❌ Erro ao executar comando ${commandName}:`, error);
+    await command.execute(message, args, config.prefix);
+  } catch (err) {
+    console.error(`❌ Erro ao executar comando ${commandName}:`, err);
     message.reply("❌ Ocorreu um erro ao executar esse comando!");
   }
 });
@@ -82,14 +77,9 @@ client.on("messageCreate", async (message) => {
 // Login no Discord
 client.login(process.env.DISCORD_TOKEN);
 
-// 🖥️ Servidor Express para manter o bot acordado (Render/Replit)
+// Express para manter bot acordado
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.get("/", (req, res) => {
-  res.send("Bot está rodando com sucesso 🚀");
-});
-
-app.listen(port, () => {
-  console.log(`🌐 Servidor HTTP rodando na porta ${port}`);
-});
+app.get("/", (req, res) => res.send("Bot está rodando 🚀"));
+app.listen(port, () => console.log(`🌐 Servidor HTTP rodando na porta ${port}`));
