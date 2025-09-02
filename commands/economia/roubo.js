@@ -3,7 +3,7 @@ import { getUser, updateCoins } from "../../utils/database.js";
 
 export default {
   name: "roubar",
-  description: "Roube moedas de outro jogador",
+  description: "Tente roubar ANF Coins de outro jogador (cuidado com a polícia!)",
   async execute(message) {
     const alvo = message.mentions.users.first();
     if (!alvo) return message.reply("❌ Mencione alguém para roubar!");
@@ -11,8 +11,9 @@ export default {
 
     const user = await getUser(message.author.id);
     const vitima = await getUser(alvo.id);
+
     const now = Date.now();
-    const cooldown = 12 * 60 * 60 * 1000;
+    const cooldown = 12 * 60 * 60 * 1000; // 12h
     const diff = now - (user.lastSteal || 0);
 
     if (diff < cooldown) {
@@ -22,31 +23,38 @@ export default {
       return message.reply(`⏳ Você já roubou recentemente! Tente novamente em ${horas}h ${minutos}m.`);
     }
 
-    // Chance da polícia (5%)
-    if (Math.random() < 0.05) {
-      const perda = Math.floor(Math.random() * 101) + 100; // 100-200 moedas
-      user.coins = Math.max(0, user.coins - perda);
+    // chance da polícia pegar
+    const policiaChance = Math.random();
+    if (policiaChance < 0.05) { // 5% chance
+      const perda = Math.floor(Math.random() * 101) + 100; // 100 a 200 ANF Coins
+      const lost = Math.min(perda, user.coins);
+      await updateCoins(user.id, -lost);
+
+      const embed = new EmbedBuilder()
+        .setTitle("🚨 Polícia!")
+        .setDescription(`${message.author} foi pego pela polícia e perdeu **${lost} ANF Coins**!`)
+        .setColor("Red");
+
       user.lastSteal = now;
       await user.save();
-      return message.reply(`🚓 A polícia te pegou! Você perdeu **${perda} ANF Coins**.`);
+
+      return message.channel.send({ embeds: [embed] });
     }
 
-    const porcentagem = Math.random() * 0.1;
-    const roubado = Math.floor(vitima.coins * porcentagem);
+    // roubo normal
+    const porcentagem = Math.random() * 0.1; // até 10%
+    const roubado = Math.min(vitima.coins, Math.floor(vitima.coins * porcentagem));
+    await updateCoins(user.id, roubado);
+    await updateCoins(vitima.id, -roubado);
 
-    vitima.coins -= roubado;
-    user.coins += roubado;
     user.lastSteal = now;
-    await vitima.save();
     await user.save();
 
     const embed = new EmbedBuilder()
-      .setTitle("🕵️ Roubo realizado")
+      .setTitle("🕵️ Roubo realizado!")
       .setDescription(`${message.author} roubou **${roubado} ANF Coins** de ${alvo}!`)
       .setColor("DarkPurple");
 
-    message.reply({ embeds: [embed] });
+    message.channel.send({ embeds: [embed] });
   }
 };
-
-

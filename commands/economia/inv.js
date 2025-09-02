@@ -3,29 +3,23 @@ import { getInventory } from "../../utils/database.js";
 
 export default {
   name: "inv",
-  description: "Mostra seus itens comprados.",
+  description: "Mostra seu inventário",
   async execute(message) {
-    const inv = await getInventory(message.author.id);
+    const items = await getInventory(message.author.id);
 
-    if (inv.length === 0) {
-      return message.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle("📦 Inventário vazio")
-            .setDescription("Você ainda não comprou nenhum item.")
-            .setColor("Red"),
-        ],
-      });
-    }
+    if (!items.length) return message.reply("📦 Seu inventário está vazio!");
 
-    const lista = inv.map(i => `- ${i}`).join("\n");
+    const lootboxes = items.filter(i => i.startsWith("lootbox"));
+    const outros = items.filter(i => !i.startsWith("lootbox"));
 
     const embed = new EmbedBuilder()
-      .setTitle(`📦 Inventário de ${message.author.username}`)
-      .setDescription(lista)
+      .setTitle(`${message.author.username} — Inventário`)
       .setColor("Blue")
-      .setFooter({ text: "Use !shop para ver os itens disponíveis." });
+      .addFields(
+        { name: "📦 Lootboxes", value: lootboxes.length ? lootboxes.join("\n") : "Nenhuma", inline: true },
+        { name: "🎒 Outros itens", value: outros.length ? outros.join("\n") : "Nenhum", inline: true }
+      );
 
-    message.reply({ embeds: [embed] });
-  },
+    message.channel.send({ embeds: [embed] });
+  }
 };

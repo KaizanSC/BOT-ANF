@@ -3,36 +3,31 @@ import { User } from "../../utils/database.js";
 
 export default {
   name: "top",
-  description: "Mostra o ranking de moedas.",
+  description: "Mostra os jogadores com mais ANF Coins",
   async execute(message) {
-    console.log("Comando 'top' executado.");
-
     try {
-      const top = await User.findAll({ order: [["coins", "DESC"]], limit: 10 });
+      // Pega os 10 usuários com mais coins
+      const topUsers = await User.findAll({
+        order: [["coins", "DESC"]],
+        limit: 10
+      });
 
-      if (top.length === 0) {
-        return message.reply({
-          embeds: [
-            new EmbedBuilder()
-              .setTitle("🏆 Ranking de Riqueza")
-              .setDescription("Ninguém tem moedas ainda!")
-              .setColor("Red"),
-          ],
-        });
-      }
+      if (!topUsers.length) return message.reply("❌ Nenhum usuário encontrado.");
 
-      const lista = top.map((user, i) => `**#${i + 1}** — <@${user.id}> • 💰 ${user.coins}`).join("\n");
+      const description = topUsers
+        .map((user, index) => `**${index + 1}.** <@${user.id}> — **${user.coins} ANF Coins**`)
+        .join("\n");
 
       const embed = new EmbedBuilder()
-        .setTitle("🏆 Ranking de Riqueza")
-        .setDescription(lista)
+        .setTitle("🏆 Ranking de ANF Coins")
+        .setDescription(description)
         .setColor("Gold")
-        .setFooter({ text: "Top 10 usuários mais ricos" });
+        .setFooter({ text: "Quem será o maior colecionador de ANF Coins?" });
 
       message.channel.send({ embeds: [embed] });
-    } catch (error) {
-      console.error("Erro ao executar o comando 'top':", error);
-      message.reply("❌ Ocorreu um erro ao buscar o ranking de moedas.");
+    } catch (err) {
+      console.error("Erro no comando top:", err);
+      message.reply("❌ Ocorreu um erro ao tentar exibir o ranking.");
     }
-  },
+  }
 };
