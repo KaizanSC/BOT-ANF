@@ -17,9 +17,9 @@ export const User = sequelize.define("User", {
   id: { type: DataTypes.STRING, primaryKey: true },
   coins: { type: DataTypes.INTEGER, defaultValue: 0 },
   lastDaily: { type: DataTypes.BIGINT, defaultValue: 0 },
-  lastSteal: { type: DataTypes.BIGINT, defaultValue: 0 },
-  lastAdventure: { type: DataTypes.BIGINT, defaultValue: 0 },
-  lastScratch: { type: DataTypes.BIGINT, defaultValue: 0 },
+  lastSteal: { type: DataTypes.BIGINT, defaultValue: 0 },       // cooldown roubar
+  lastAdventure: { type: DataTypes.BIGINT, defaultValue: 0 },   // cooldown aventura
+  lastScratch: { type: DataTypes.BIGINT, defaultValue: 0 },     // cooldown raspadinha
 });
 
 // Loja padrão
@@ -42,7 +42,7 @@ Inventory.belongsTo(User, { foreignKey: "userId" });
 export async function initDB() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
+    await sequelize.sync({ alter: true }); // Atualiza tabela se houver novas colunas
     console.log("✅ Banco PostgreSQL conectado e sincronizado!");
   } catch (err) {
     console.error("❌ Erro ao conectar ao banco:", err);
@@ -58,7 +58,7 @@ export async function getUser(id) {
   return user;
 }
 
-// Atualizar moedas
+// Atualizar moedas (ANF Coins)
 export async function updateCoins(id, amount) {
   const user = await getUser(id);
   user.coins += amount;
@@ -87,12 +87,12 @@ export async function buyItem(userId, itemName) {
   if (!item) return { success: false, message: "❌ Esse item não existe!" };
 
   const user = await getUser(userId);
-  if (user.coins < item.price) return { success: false, message: "💸 Você não tem moedas suficientes!" };
+  if (user.coins < item.price) return { success: false, message: "💸 Você não tem ANF Coins suficientes!" };
 
   await updateCoins(userId, -item.price);
   await Inventory.create({ userId, item: itemName });
 
-  return { success: true, message: `✅ Você comprou **${itemName}** por ${item.price} moedas!` };
+  return { success: true, message: `✅ Você comprou **${itemName}** por ${item.price} ANF Coins!` };
 }
 
 // ---------------------- INVENTÁRIO ----------------------
@@ -100,4 +100,3 @@ export async function getInventory(userId) {
   const inv = await Inventory.findAll({ where: { userId } });
   return inv.map(i => i.item);
 }
-
